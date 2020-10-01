@@ -214,6 +214,8 @@ Docker-eyeOS is an exploration platform for researchers and anyone who is intere
 - Create your own using [Docker-OSX](https://github.com/sickcodes/Docker-OSX) 
 - And then run `osx-build-xnu-disks.sh` shell script.
 
+[Image build script for Docker-OSX](https://github.com/sickcodes/Docker-eyeOS/blob/master/osx-build-xnu-disks.sh)
+
 ```bash
 # compress images for any reason
 zstd -k hfs.main
@@ -333,7 +335,10 @@ EOF
 ```
 
 - Complete the script on OSX that is inside this repo
-- Pull the images out
+
+[https://github.com/sickcodes/Docker-eyeOS/blob/master/osx-build-xnu-disks.sh](https://github.com/sickcodes/Docker-eyeOS/blob/master/osx-build-xnu-disks.sh)
+
+- Pull the images out when you're done:
 
 ```bash
 

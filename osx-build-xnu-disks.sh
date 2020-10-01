@@ -12,14 +12,8 @@
 # License:          GPLv3+
 
 # Authors:  Sick.Codes https://github.com/sickcodes
-# Usage:    bash ./git-deploy-key-setup.sh
-# Purpose:  Converts or prepares an RPi with deploy keys.
-#           Paste this code into a RPi terminal to complete setup
-
-# set -e
-
-
-# Mostly based on https://github.com/alephsecurity/xnu-qemu-arm64/wiki/Build-iOS-on-QEMU
+# Original Authors: @AlephSecurity
+# Based ON: https://github.com/alephsecurity/xnu-qemu-arm64/wiki/Build-iOS-on-QEMU
 # Author: Vera Ashkenazi via Aleph Security
 # License: GPLv2 see https://github.com/alephsecurity/xnu-qemu-arm64/blob/master/LICENSE
 

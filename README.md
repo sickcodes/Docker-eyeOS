@@ -6,6 +6,8 @@ Supports KVM + GDB kernel debugging! Run armv8-A in a Docker! Works on ANY devic
 
 ## [Follow us @sickcodes on Twitter for updates!](https://twitter.com/sickcodes)
 
+![Docker-eyeOS iOS Kernel Debugging](/Docker-eyeOS.gif?raw=true "Docker-eyeOS iOS Kernel Debugging")
+
 ### Docker-eyeOS v1.0.12.1
 # Features In Docker-eyeOS
 - qemu-system-aarch64 boot into iOS!

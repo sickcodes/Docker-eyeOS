@@ -65,6 +65,11 @@ ssh root@localhost -p 2222
 
 ## NOTE:
 
+- Hit enter a few times in the container terminal until you see `-bash-4.4#`
+
+- SSH into the container on `localhost:2222` or `containerIP:2222`
+
+
 # RUN Docker-eyeOS with GDB iOS Kernel Debugging!
 
 ```bash
@@ -80,13 +85,14 @@ docker run -it --privileged \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -p 1233:1234 \
     -e GDB_ARGS='-S -s' \
+    docker-eyeos:latest
     sickcodes/docker-eyeos:latest
 
 # image will halt
 
 # get container ID
 docker ps
-docker exec -it containerID /bin/bash -c "cd /home/arch/docker-eyeos/xnu-qemu-arm64-tools/gdb; gdb-multiarch -q"
+docker exec -it 3cb2d14fc11a /bin/bash -c "cd /home/arch/docker-eyeos/xnu-qemu-arm64-tools/gdb; gdb-multiarch -q"
 
 # run 
 source load.py
@@ -95,9 +101,6 @@ target remote localhost:1234
 
 ```
 
-- Hit enter a few times in the container terminal until you see `-bash-4.4#`
-
-- SSH into the container on `localhost:2222` or `containerIP:2222`
 
 ### Export PATH
 
@@ -129,7 +132,7 @@ Supported by:
 
 - Aleph Security [@AlephSecurity](https://alephsecurity.com/)
 - Vera Mens [@v3rochka GitHub](https://github.com/V3rochka) && [@v3rochka Twitter](https://twitter.com/V3rochka)
-- Jonathan Afek [@v3rochka GitHub](https://github.com/V3rochka) && [@v3rochka Twitter](https://twitter.com/V3rochka)
+- Jonathan Afek [@jonyafek GitHub](https://github.com/jonyafek) && [@JonathanAfek Twitter](https://twitter.com/JonathanAfek)
 - Lev Aronsky [@aronsky GitHub](https://github.com/aronsky) && [@levaronsky Twitter](https://twitter.com/levaronsky)
 
 TCP Tunnel for Linux rework:

@@ -14,7 +14,9 @@
 # License:          GPLv3+
 
 # Docker interpretation by @sickcodes: https://twitter.com/sickcodes
-
+#
+# https://twitter.com/sickcodes         @sickcodes
+#
 # All credits for iOS magic to:
 # https://twitter.com/jonathanafek      @jonathanafek
 # https://twitter.com/levaronsky        @levaronsky
@@ -23,7 +25,7 @@
 # https://twitter.com/alephsecurity
 
 # Extra special hat tip to @MCApollo + @levaronsky for fixing the TCP tunnel for GNU/Linux!
-# @MCApollo       https://github.com/MCApollo     
+# https://github.com/MCApollo      @MCApollo
 
 # Follow for updates!
 # @sickcodes https://twitter.com/sickcodes
@@ -32,9 +34,9 @@
 # aarch64-qemu-system for booting xnu-qemu-arm64/iOS
 
 # Bells & Whistle
-# - gdb debugging with agdb-multiarch
+# - gdb debugging with gdb-multiarch
 
-# Run Darwin Kernel Version 18.2.0 xnu-4903.222.5~1/RELEASE_ARM64_S8000 iPhone8,2
+# Run Darwin Kernel Version 18.2.0 xnu-4903.222.5~1/RELEASE_ARM64_S8000 for iPhone8,2
 # Thru QEMU + Docker!
 
 # Run:
@@ -45,20 +47,17 @@
 #     -e HFS_MAIN=./images/hfs.main \
 #     -e HFS_SEC=./images/hfs.sec \
 #     -p 2222:2222 \
-#     -p 1233:1234 \
-#     -e GDB=true \
-#     -e IMAGES=remote \
 #     -v "$PWD:/home/arch/docker-eyeos/images" \
 #     -e "DISPLAY=${DISPLAY:-:0.0}" \
 #     -v /tmp/.X11-unix:/tmp/.X11-unix \
+#     -p 1233:1234 \
+#     -e GDB_ARGS='-S -s' \
 #     sickcodes/docker-eyeos:latest
 #
 #       
 # Or build:
 #
 #       docker build -t docker-eyeos .
-#
-# 
 # 
 # 
 

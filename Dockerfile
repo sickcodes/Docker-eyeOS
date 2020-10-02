@@ -252,17 +252,17 @@ RUN touch enable-ssh.sh \
 
 RUN touch ./Launch.sh \
     && chmod +x Launch.sh \
-    && tee -a Launch.sh <<< 'until [[ $(sudo fsck.hfsplus -fp ./images/hfs.sec) ]] || [[ $(sudo fsck.hfsplus -fp ./hfs.sec) ]]; do' \
+    && tee -a Launch.sh <<< 'until [[ $(sudo fsck.hfsplus -fp ${HFS_MAIN}) ]]; do' \
     && tee -a Launch.sh <<< '    echo "Repairing hfs.sec..."' \
     && tee -a Launch.sh <<< 'done' \
-    && tee -a Launch.sh <<< 'until [[ $(sudo fsck.hfsplus -fp ./images/hfs.main) ]] || [[ $(sudo fsck.hfsplus -fp ./hfs.main) ]]; do' \
+    && tee -a Launch.sh <<< 'until [[ $(sudo fsck.hfsplus -fp ${HFS_SEC}) ]]; do' \
     && tee -a Launch.sh <<< '    echo "Repairing hfs.main..."' \
     && tee -a Launch.sh <<< 'done' \
     && tee -a Launch.sh <<< '[[ $GDB = true ]] && export GDB_ARGS="-S -s"'  \
     && tee -a Launch.sh <<< 'sudo xnu-qemu-arm64/aarch64-softmmu/qemu-system-aarch64 ${GDB_ARGS} \' \
     && tee -a Launch.sh <<< '-M iPhone6splus-n66-s8000,kernel-filename=${KERNEL_CACHE},dtb-filename=${DTB_FIRMWARE},driver-filename=${DRIVER_FILENAME},qc-file-0-filename=${HFS_MAIN},qc-file-1-filename=${HFS_SEC},kern-cmd-args="debug=0x8 kextlog=0xfff cpus=1 rd=disk0 serial=2",xnu-ramfb=off \' \
     && tee -a Launch.sh <<< '    -cpu max \' \
-    && tee -a Launch.sh <<< '    -m 6G \' \
+    && tee -a Launch.sh <<< '    -m ${RAM:-6}G \' \
     && tee -a Launch.sh <<< '    -serial mon:stdio \' \
     && tee -a Launch.sh <<< '    -vga std \' \
     && tee -a Launch.sh <<< '    ${EXTRA:-}'

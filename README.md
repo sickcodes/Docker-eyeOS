@@ -87,7 +87,6 @@ docker run -it --privileged \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -p 1233:1234 \
     -e GDB_ARGS='-S -s' \
-    docker-eyeos:latest
     sickcodes/docker-eyeos:latest
 
 # image will halt

@@ -11,11 +11,11 @@
 # Version:          v1.0.12.1
 # License:          GPLv3+
 
-# Authors:  Sick.Codes https://github.com/sickcodes
+# Authors:          Sick.Codes https://github.com/sickcodes
 # Original Authors: @AlephSecurity
-# Based ON: https://github.com/alephsecurity/xnu-qemu-arm64/wiki/Build-iOS-on-QEMU
-# Author: Vera Ashkenazi via Aleph Security
-# License: GPLv2 see https://github.com/alephsecurity/xnu-qemu-arm64/blob/master/LICENSE
+# Based ON:         https://github.com/alephsecurity/xnu-qemu-arm64/wiki/Build-iOS-on-QEMU
+# Author:           Vera Ashkenazi via Aleph Security
+# License:          GPLv2 see https://github.com/alephsecurity/xnu-qemu-arm64/blob/master/LICENSE
 
 # Download homebrew from https://brew.sh/
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"

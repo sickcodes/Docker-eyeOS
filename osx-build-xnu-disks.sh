@@ -124,9 +124,9 @@ cd ..
 
 pip3 install pyasn1 numpy
 
-python xnu-qemu-arm64-tools/bootstrap_scripts/asn1kerneldecode.py "${KERNEL_CACHE_RAW}" "${KERNEL_CACHE_RAW}.asn1decoded"
-python xnu-qemu-arm64-tools/bootstrap_scripts/decompress_lzss.py "${KERNEL_CACHE_RAW}.asn1decoded" "${KERNEL_CACHE_RAW}.out"
-python xnu-qemu-arm64-tools/bootstrap_scripts/asn1dtredecode.py "Firmware/all_flash/${DEVICE_TREE_IM4P}" "Firmware/all_flash/${DEVICE_TREE_IM4P}.out"
+python3 xnu-qemu-arm64-tools/bootstrap_scripts/asn1kerneldecode.py "${KERNEL_CACHE_RAW}" "${KERNEL_CACHE_RAW}.asn1decoded"
+python3 xnu-qemu-arm64-tools/bootstrap_scripts/decompress_lzss.py "${KERNEL_CACHE_RAW}.asn1decoded" "${KERNEL_CACHE_RAW}.out"
+python3 xnu-qemu-arm64-tools/bootstrap_scripts/asn1dtredecode.py "Firmware/all_flash/${DEVICE_TREE_IM4P}" "Firmware/all_flash/${DEVICE_TREE_IM4P}.out"
 
 
 # get symbols, FYI need to use llvm-nm on Linux
@@ -504,7 +504,7 @@ hdiutil detach "/Volumes/${RAM_DISK_NAME}"
 
 echo 'FIN; Docker-eyeOS'
 
-# scp -P 50922 fullname@localhost:~/static_tc .
-# scp -P 50922 fullname@localhost:~/tchashes .
-# scp -P 50922 fullname@localhost:~/hfs.main .
-# scp -P 50922 fullname@localhost:~/hfs.sec .
+scp -P 50922 fullname@localhost:~/static_tc .
+scp -P 50922 fullname@localhost:~/tchashes .
+scp -P 50922 fullname@localhost:~/hfs.main .
+scp -P 50922 fullname@localhost:~/hfs.sec .

@@ -40,6 +40,7 @@ fi
 echo BUILD ARGS
 
 IPSW=http://updates-http.cdn-apple.com/2018FallFCS/fullrestores/091-91479/964118EC-D4BE-11E8-BC75-A45C715A3354/iPhone_5.5_12.1_16B92_Restore.ipsw
+IPSW_BASENAME="$(basename "${IPSW}")"
 RAM_DISK=048-32651-104.dmg              # RAM DISK, 100mb or so
 IOS_DISK=048-31952-103.dmg              # BIGGEST DISK, few GB
 DUD_DISK=048-32459-105.dmg              # unused
@@ -60,8 +61,8 @@ brew install python3 pkg-config pixman wget git unzip iproute2mac gcc glib rsync
 
 
 # download iOS 12.1 for iPhone 6S
-[[ -e "${IPSW}" ]] || wget "${IPSW}"
-unzip "$(basename "${IPSW}")"
+[[ -e "${IPSW_BASENAME}" ]] || wget "${IPSW}"
+unzip "${IPSW_BASENAME}"
 
 # clone required repos
 git clone https://github.com/alephsecurity/xnu-qemu-arm64-tools.git

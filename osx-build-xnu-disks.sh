@@ -386,7 +386,7 @@ export DRIVER_FILENAME="$PWD/aleph_bdev_drv.bin"
 export IOS_DIR="$PWD"
 export HFS_MAIN="$PWD/hfs.main"
 export HFS_SEC="$PWD/hfs.sec"
-export SDK_DIR="$PWD/${IOD_SDK}"
+export SDK_DIR="${IOD_SDK}"
 
 # Update tree & Build the Custom Block Device Driver
 # cd "${QEMU_TOOLS_DIR}"

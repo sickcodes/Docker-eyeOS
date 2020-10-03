@@ -58,8 +58,10 @@
 # Or build:
 #
 #       docker build -t docker-eyeos .
-# 
-# 
+#       
+#       docker build --build-arg GDB_MULTIARCH=false -t docker-eyeos .
+#       
+
 
 FROM archlinux:latest
 MAINTAINER '@sickcodes' <https://twitter.com/sickcodes>
@@ -67,19 +69,48 @@ LABEL maintainer "https://github.com/sickcodes"
 
 USER root
 
+#### IPSW SPECIFICS
+# build args to become more generic platform for debugging any iOS version
+
+# IPSW url
+ARG IPSW=http://updates-http.cdn-apple.com/2018FallFCS/fullrestores/091-91479/964118EC-D4BE-11E8-BC75-A45C715A3354/iPhone_5.5_12.1_16B92_Restore.ipsw
+# find name after unzipping the IPSW above
+ARG KERNEL_CACHE_RAW=kernelcache.release.n66
+# located at "./Firmware/all_flash/" after unzipping the IPSW
+ARG DEVICE_TREE_IM4P=DeviceTree.n66ap.im4p
+# DEVICE MODEL
+ENV PHONE_MODEL iPhone6splus-n66-s8000
+
+
+#### IOS_SDK FOR BUILDING TCP-TUNNEL (FUTURE)
+# choose SDK version from
+# https://github.com/theos/sdks
+ARG IOS_SDK=./sdks/iPhoneOS11.2.sdk
+# Or from 
+# https://github.com/xybp888/iOS-SDKs.git
+# ARG IOS_SDK=./iOS-SDKs/iPhoneOS13.7.sdk
+
+#### GDB INSTALLATION ON OR OFF
+# speed up build without gdb
+# docker build --build-arg GDB_MULTIARCH=false -t docker-eyeos .
+ARG GDB_MULTIARCH=true
+
+
+
+# WORKING DIRECTORY INSIDE THE CONTAINER
 ENV WD=/home/arch/docker-eyeos
 
-ENV XNU_SOURCES="$WD/darwin-xnu"
-ENV KERNEL_SYMBOLS_FILE="$WD/symbols.nm"
-ENV QEMU_DIR="$WD/xnu-qemu-arm64"
-ENV IOS_DIR="$WD"
+ENV XNU_SOURCES="${WD}/darwin-xnu"
+ENV KERNEL_SYMBOLS_FILE="${WD}/symbols.nm"
+ENV QEMU_DIR="${WD}/xnu-qemu-arm64"
+ENV IOS_DIR="${WD}"
 ENV NUM_BLOCK_DEVS=2
-ENV KERNEL_CACHE="$WD/kernelcache.release.n66.out"
-ENV DTB_FIRMWARE="$WD/Firmware/all_flash/DeviceTree.n66ap.im4p.out"
-ENV DRIVER_FILENAME="$WD/aleph_bdev_drv.bin"
-ENV HFS_MAIN="$WD/hfs.main"
-ENV HFS_SEC="$WD/hfs.sec"
-ENV SDK_DIR="$WD/sdks/iPhoneOS11.2.sdk"
+ENV KERNEL_CACHE="${WD}/${KERNEL_CACHE_RAW}.out"
+ENV DTB_FIRMWARE="${WD}/Firmware/all_flash/${DEVICE_TREE_IM4P}.out"
+ENV DRIVER_FILENAME="${WD}/aleph_bdev_drv.bin"
+ENV HFS_MAIN="${WD}/hfs.main"
+ENV HFS_SEC="${WD}/hfs.sec"
+ENV SDK_DIR="${WD}/${IOS_SDK}"
 
 ENV DISPLAY=:0.0
 ENV GDB_PORT=1234
@@ -121,7 +152,7 @@ RUN sed -i -e 's/\ \ patch\ \-p0\ \-i\ /patch\ \-p1\ \-i\ \"\${srcdir}\/\.\.\/hf
 WORKDIR /home/arch
 RUN yay --getpkgbuild gdb-multiarch
 WORKDIR /home/arch/gdb-multiarch
-RUN makepkg --skipinteg --skippgpcheck --skipchecksums -si --noconfirm
+RUN if [[ "${GDB_MULTIARCH}" = true ]]; then makepkg --skipinteg --skippgpcheck --skipchecksums -si --noconfirm; else echo "Skipping GDB"; fi
 
 # allow ssh to container
 USER root
@@ -152,9 +183,9 @@ RUN mkdir -p /home/arch/docker-eyeos \
 
 # start workin
 WORKDIR /home/arch/docker-eyeos
-RUN wget http://updates-http.cdn-apple.com/2018FallFCS/fullrestores/091-91479/964118EC-D4BE-11E8-BC75-A45C715A3354/iPhone_5.5_12.1_16B92_Restore.ipsw
+RUN wget "${IPSW}"
 
-RUN unzip iPhone_5.5_12.1_16B92_Restore.ipsw
+RUN unzip "$(basename "${IPSW}")"
 
 WORKDIR /home/arch/docker-eyeos
 RUN git clone https://github.com/apple/darwin-xnu.git
@@ -172,7 +203,7 @@ RUN git reset --hard HEAD^1 \
     && git reset --hard HEAD^1 \
     && git pull --all \
     && git checkout bbd2d9955021d72d5dbfccc94a034cc671c41181 \
-    && echo 'Thank you MCApollo && Aleph Security (Lev Aronsky, Jonathan Afek, Vera Mens!'
+    && echo 'Thank you MCApollo && Aleph Security (Lev Aronsky, Jonathan Afek, Vera Mens!)'
 
 WORKDIR /home/arch/docker-eyeos
 RUN git clone https://github.com/alephsecurity/xnu-qemu-arm64-tools.git
@@ -185,15 +216,15 @@ RUN git reset --hard HEAD^1 \
     && git reset --hard HEAD^1 \
     && git pull --all \
     && git checkout 10ce50869ce573725774cd0e9a2a431ff3beec5c \
-    && echo 'Thank you MCApollo && Aleph Security (Lev Aronsky, Jonathan Afek, Vera Mens!'
+    && echo 'Thank you MCApollo && Aleph Security (Lev Aronsky, Jonathan Afek, Vera Mens!)'
 
 WORKDIR /home/arch/docker-eyeos
-RUN python xnu-qemu-arm64-tools/bootstrap_scripts/asn1kerneldecode.py kernelcache.release.n66 kernelcache.release.n66.asn1decoded
-RUN python xnu-qemu-arm64-tools/bootstrap_scripts/decompress_lzss.py kernelcache.release.n66.asn1decoded kernelcache.release.n66.out
-RUN python xnu-qemu-arm64-tools/bootstrap_scripts/asn1dtredecode.py Firmware/all_flash/DeviceTree.n66ap.im4p Firmware/all_flash/DeviceTree.n66ap.im4p.out
+RUN python xnu-qemu-arm64-tools/bootstrap_scripts/asn1kerneldecode.py "${KERNEL_CACHE_RAW}" "${KERNEL_CACHE_RAW}.asn1decoded"
+RUN python xnu-qemu-arm64-tools/bootstrap_scripts/decompress_lzss.py "${KERNEL_CACHE_RAW}.asn1decoded" "${KERNEL_CACHE_RAW}.out"
+RUN python xnu-qemu-arm64-tools/bootstrap_scripts/asn1dtredecode.py "Firmware/all_flash/${DEVICE_TREE_IM4P}" "Firmware/all_flash/${DEVICE_TREE_IM4P}.out"
 
 # extract symbols
-RUN llvm-nm kernelcache.release.n66.out > symbols.nm
+RUN llvm-nm "${KERNEL_CACHE_RAW}.out" > symbols.nm
 RUN cp symbols.nm ./xnu-qemu-arm64
 RUN cp symbols.nm ./images
 
@@ -210,19 +241,21 @@ USER arch
 
 WORKDIR /home/arch/docker-eyeos
 
+# redefine env for arch user
 ENV WD="/home/arch/docker-eyeos"
 
-ENV XNU_SOURCES="$WD/darwin-xnu"
-ENV KERNEL_SYMBOLS_FILE="$WD/symbols.nm"
-ENV QEMU_DIR="$WD/xnu-qemu-arm64"
-ENV IOS_DIR="$WD"
+ENV XNU_SOURCES="${WD}/darwin-xnu"
+ENV KERNEL_SYMBOLS_FILE="${WD}/symbols.nm"
+ENV QEMU_DIR="${WD}/xnu-qemu-arm64"
+ENV IOS_DIR="${WD}"
 ENV NUM_BLOCK_DEVS=2
-ENV KERNEL_CACHE="$WD/kernelcache.release.n66.out"
-ENV DTB_FIRMWARE="$WD/Firmware/all_flash/DeviceTree.n66ap.im4p.out"
-ENV DRIVER_FILENAME="$WD/aleph_bdev_drv.bin"
-ENV HFS_MAIN="$WD/hfs.main"
-ENV HFS_SEC="$WD/hfs.sec"
-ENV SDK_DIR="$WD/sdks/iPhoneOS11.2.sdk"
+ENV KERNEL_CACHE="${WD}/${KERNEL_CACHE_RAW}.out"
+ENV DTB_FIRMWARE="${WD}/Firmware/all_flash/${DEVICE_TREE_IM4P}.out"
+ENV DRIVER_FILENAME="${WD}/aleph_bdev_drv.bin"
+ENV HFS_MAIN="${WD}/hfs.main"
+ENV HFS_SEC="${WD}/hfs.sec"
+ENV SDK_DIR="${WD}/${IOS_SDK}"
+ENV PHONE_MODEL="${PHONE_MODEL}"
 
 ENV DISPLAY=:0.0
 ENV GDB_PORT=1234
@@ -258,9 +291,8 @@ RUN touch ./Launch.sh \
     && tee -a Launch.sh <<< 'until [[ $(sudo fsck.hfsplus -fp ${HFS_SEC}) ]]; do' \
     && tee -a Launch.sh <<< '    echo "Repairing hfs.main..."' \
     && tee -a Launch.sh <<< 'done' \
-    && tee -a Launch.sh <<< '[[ $GDB = true ]] && export GDB_ARGS="-S -s"'  \
     && tee -a Launch.sh <<< 'sudo xnu-qemu-arm64/aarch64-softmmu/qemu-system-aarch64 ${GDB_ARGS} \' \
-    && tee -a Launch.sh <<< '-M iPhone6splus-n66-s8000,kernel-filename=${KERNEL_CACHE},dtb-filename=${DTB_FIRMWARE},driver-filename=${DRIVER_FILENAME},qc-file-0-filename=${HFS_MAIN},qc-file-1-filename=${HFS_SEC},kern-cmd-args="debug=0x8 kextlog=0xfff cpus=1 rd=disk0 serial=2",xnu-ramfb=off \' \
+    && tee -a Launch.sh <<< '-M ${PHONE_MODEL},kernel-filename=${KERNEL_CACHE},dtb-filename=${DTB_FIRMWARE},driver-filename=${DRIVER_FILENAME},qc-file-0-filename=${HFS_MAIN},qc-file-1-filename=${HFS_SEC},kern-cmd-args="debug=0x8 kextlog=0xfff cpus=1 rd=disk0 serial=2",xnu-ramfb=off \' \
     && tee -a Launch.sh <<< '    -cpu max \' \
     && tee -a Launch.sh <<< '    -m ${RAM:-6}G \' \
     && tee -a Launch.sh <<< '    -serial mon:stdio \' \

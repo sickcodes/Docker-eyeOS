@@ -149,6 +149,13 @@ make -C xnu-qemu-arm64-tools/aleph_bdev_drv
 
 cp ./xnu-qemu-arm64-tools/aleph_bdev_drv/bin/aleph_bdev_drv.bin ./
 
+
+# remove disks from any previous runs
+while read DISK_NAME; do
+    echo "$DISK_NAME"
+    sudo hdiutil detach "/Volumes/${DISK_NAME}"
+done <<< $(ls /Volumes | grep "${RAM_DISK_NAME}\|${IOS_DISK_NAME}")
+
 python3 xnu-qemu-arm64-tools/bootstrap_scripts/asn1rdskdecode.py "./${RAM_DISK}" "./${RAM_DISK}.out"
 cp "./${RAM_DISK}.out" ./hfs.main
 

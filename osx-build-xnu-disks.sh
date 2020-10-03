@@ -23,17 +23,18 @@
 # ./osx-build-xnu-disks.sh
 
 if [[ "${BASH_VERSION}" != 5* ]]; then 
-    echo '
+    cat <<'EOF'
     # install brew
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
     # switch from bash 3 to bash 5
     brew install bash 
     sudo chsh -s /usr/local/bin/bash root
-    echo '/usr/local/bin/bash' >> ~/.zshrc
-    echo 'export PATH="/usr/local/opt/unzip/bin:\$PATH"' >> ~/.bashrc
+    echo /usr/local/bin/bash' >> ~/.zshrc
+    echo 'export PATH="/usr/local/opt/unzip/bin:$PATH"' >> ~/.bashrc
     . ~/.zshrc
-    ' && exit 1
+EOF
+    exit 1
 fi
 
 echo BUILD ARGS

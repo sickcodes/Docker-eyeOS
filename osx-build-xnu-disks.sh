@@ -58,8 +58,9 @@ PATCHED_DYLD=https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/pat
 
 brew install python3 pkg-config pixman wget git unzip iproute2mac gcc glib rsync
 
+
 # download iOS 12.1 for iPhone 6S
-wget "${IPSW}"
+[[ -e "${IPSW}" ]] || wget "${IPSW}"
 unzip "$(basename "${IPSW}")"
 
 # clone required repos

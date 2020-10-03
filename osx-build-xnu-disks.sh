@@ -19,6 +19,9 @@
 
 # Download homebrew from https://brew.sh/
 
+# be in bash 5 and run:
+# ./osx-build-xnu-disks.sh
+
 
 if [[ "$(/usr/local/bin/bash --version | grep 'version 5')" ]]; then
     echo "Bash version 5, continuing..."

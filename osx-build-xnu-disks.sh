@@ -20,6 +20,23 @@
 # Download homebrew from https://brew.sh/
 
 
+if [[ "$($0 --version | grep 'version 5')" ]]; then
+    echo "Bash version 5, continuing..."
+else
+    echo '
+    # install brew
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+
+    # switch from bash 3 to bash 5
+    brew install bash 
+    sudo chsh -s /usr/local/bin/bash root
+    echo '/usr/local/bin/bash' >> ~/.zshrc
+    echo 'export PATH="/usr/local/opt/unzip/bin:\$PATH"' >> ~/.bashrc
+    . ~/.zshrc
+    ' && exit 1
+
+fi
+
 echo BUILD ARGS
 
 IPSW=http://updates-http.cdn-apple.com/2018FallFCS/fullrestores/091-91479/964118EC-D4BE-11E8-BC75-A45C715A3354/iPhone_5.5_12.1_16B92_Restore.ipsw
@@ -39,16 +56,8 @@ PATHCED_LAUNCHD=https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/
 PATCH_DYLD=true
 PATCHED_DYLD=https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/patched/dyld.patched.bin
 
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
 brew install python3 pkg-config pixman wget git unzip iproute2mac gcc glib rsync
-
-# switch from bash 3 to bash 5
-brew install bash 
-sudo chsh -s /usr/local/bin/bash root
-echo '/usr/local/bin/bash' >> ~/.zshrc
-echo 'export PATH="/usr/local/opt/unzip/bin:$PATH"' >> ~/.bashrc
-. ~/.zshrc
 
 # download iOS 12.1 for iPhone 6S
 wget "${IPSW}"

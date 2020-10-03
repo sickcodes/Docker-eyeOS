@@ -20,7 +20,7 @@
 # Download homebrew from https://brew.sh/
 
 # be in bash 5 and run:
-# bash /osx-build-xnu-disks.sh
+# bash ./osx-build-xnu-disks.sh
 
 if [[ "${BASH_VERSION}" != 5* ]]; then 
     cat <<'EOF'
@@ -60,7 +60,7 @@ brew install python3 pkg-config pixman wget git unzip iproute2mac gcc glib rsync
 
 # download iOS 12.1 for iPhone 6S
 wget "${IPSW}"
-unzip unzip "$(basename "${IPSW}")"
+unzip "$(basename "${IPSW}")"
 
 # clone required repos
 git clone https://github.com/alephsecurity/xnu-qemu-arm64-tools.git

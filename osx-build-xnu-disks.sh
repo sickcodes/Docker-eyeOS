@@ -511,7 +511,7 @@ hdiutil detach "/Volumes/${RAM_DISK_NAME}"
 
 echo 'FIN; Docker-eyeOS'
 
-scp -P 50922 fullname@localhost:~/static_tc .
-scp -P 50922 fullname@localhost:~/tchashes .
-scp -P 50922 fullname@localhost:~/hfs.main .
-scp -P 50922 fullname@localhost:~/hfs.sec .
+# scp -P 50922 fullname@localhost:~/static_tc .
+# scp -P 50922 fullname@localhost:~/tchashes .
+# scp -P 50922 fullname@localhost:~/hfs.main .
+# scp -P 50922 fullname@localhost:~/hfs.sec .

@@ -62,7 +62,7 @@ brew install python3 pkg-config pixman wget git unzip iproute2mac gcc glib rsync
 
 # download iOS 12.1 for iPhone 6S
 [[ -e "${IPSW_BASENAME}" ]] || wget "${IPSW}"
-unzip "${IPSW_BASENAME}"
+unzip -o "${IPSW_BASENAME}"
 
 # clone required repos
 git clone https://github.com/alephsecurity/xnu-qemu-arm64-tools.git

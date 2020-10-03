@@ -20,7 +20,7 @@
 # Download homebrew from https://brew.sh/
 
 # be in bash 5 and run:
-# ./osx-build-xnu-disks.sh
+# bash /osx-build-xnu-disks.sh
 
 if [[ "${BASH_VERSION}" != 5* ]]; then 
     cat <<'EOF'

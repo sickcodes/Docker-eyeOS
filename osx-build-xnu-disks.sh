@@ -20,7 +20,7 @@
 # Download homebrew from https://brew.sh/
 
 
-if [[ "$($0 --version | grep 'version 5')" ]]; then
+if [[ "$(/usr/local/bin/bash --version | grep 'version 5')" ]]; then
     echo "Bash version 5, continuing..."
 else
     echo '
@@ -34,7 +34,6 @@ else
     echo 'export PATH="/usr/local/opt/unzip/bin:\$PATH"' >> ~/.bashrc
     . ~/.zshrc
     ' && exit 1
-
 fi
 
 echo BUILD ARGS
@@ -55,7 +54,6 @@ PATHCED_LAUNCHD=https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/
 
 PATCH_DYLD=true
 PATCHED_DYLD=https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/patched/dyld.patched.bin
-
 
 brew install python3 pkg-config pixman wget git unzip iproute2mac gcc glib rsync
 

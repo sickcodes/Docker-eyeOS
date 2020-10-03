@@ -18,6 +18,27 @@
 # License:          GPLv2 see https://github.com/alephsecurity/xnu-qemu-arm64/blob/master/LICENSE
 
 # Download homebrew from https://brew.sh/
+
+
+echo BUILD ARGS
+
+IPSW=http://updates-http.cdn-apple.com/2018FallFCS/fullrestores/091-91479/964118EC-D4BE-11E8-BC75-A45C715A3354/iPhone_5.5_12.1_16B92_Restore.ipsw
+RAM_DISK=048-32651-104.dmg              # RAM DISK, 100mb or so
+IOS_DISK=048-31952-103.dmg              # BIGGEST DISK, few GB
+DUD_DISK=048-32459-105.dmg              # unused
+RAM_DISK_NAME=PeaceB16B92.arm64UpdateRamDisk
+IOS_DISK_NAME=PeaceB16B92.N56N66OS
+KERNEL_CACHE_RAW=kernelcache.release.n66
+DEVICE_TREE_IM4P=DeviceTree.n66ap.im4p
+PHONE_MODEL=iPhone6splus-n66-s8000
+IOD_SDK="$PWD/sdks/iPhoneOS11.2.sdk"
+
+PATCH_LAUNCHD=true
+PATHCED_LAUNCHD=https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/patched/launchd.patched.bin
+
+PATCH_DYLD=true
+PATCHED_DYLD=https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/patched/dyld.patched.bin
+
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 
 brew install python3 pkg-config pixman wget git unzip iproute2mac gcc glib rsync
@@ -30,8 +51,8 @@ echo 'export PATH="/usr/local/opt/unzip/bin:$PATH"' >> ~/.bashrc
 . ~/.zshrc
 
 # download iOS 12.1 for iPhone 6S
-wget http://updates-http.cdn-apple.com/2018FallFCS/fullrestores/091-91479/964118EC-D4BE-11E8-BC75-A45C715A3354/iPhone_5.5_12.1_16B92_Restore.ipsw
-unzip iPhone_5.5_12.1_16B92_Restore.ipsw
+wget "${IPSW}"
+unzip unzip "$(basename "${IPSW}")"
 
 # clone required repos
 git clone https://github.com/alephsecurity/xnu-qemu-arm64-tools.git
@@ -93,12 +114,13 @@ cd ..
 
 pip3 install pyasn1 numpy
 
-python3 xnu-qemu-arm64-tools/bootstrap_scripts/asn1kerneldecode.py kernelcache.release.n66 kernelcache.release.n66.asn1decoded
-python3 xnu-qemu-arm64-tools/bootstrap_scripts/decompress_lzss.py kernelcache.release.n66.asn1decoded kernelcache.release.n66.out
-python3 xnu-qemu-arm64-tools/bootstrap_scripts/asn1dtredecode.py Firmware/all_flash/DeviceTree.n66ap.im4p Firmware/all_flash/DeviceTree.n66ap.im4p.out
+python xnu-qemu-arm64-tools/bootstrap_scripts/asn1kerneldecode.py "${KERNEL_CACHE_RAW}" "${KERNEL_CACHE_RAW}.asn1decoded"
+python xnu-qemu-arm64-tools/bootstrap_scripts/decompress_lzss.py "${KERNEL_CACHE_RAW}.asn1decoded" "${KERNEL_CACHE_RAW}.out"
+python xnu-qemu-arm64-tools/bootstrap_scripts/asn1dtredecode.py "Firmware/all_flash/${DEVICE_TREE_IM4P}" "Firmware/all_flash/${DEVICE_TREE_IM4P}.out"
+
 
 # get symbols, FYI need to use llvm-nm on Linux
-nm kernelcache.release.n66.out > symbols.nm 2>/dev/null || llvm-nm kernelcache.release.n66.out > symbols.nm
+nm "${KERNEL_CACHE_RAW}.out" > symbols.nm 2>/dev/null || llvm-nm "${KERNEL_CACHE_RAW}.out" > symbols.nm
 
 export XNU_SOURCES=$PWD/darwin-xnu
 export KERNEL_SYMBOLS_FILE=$PWD/symbols.nm
@@ -117,32 +139,32 @@ make -C xnu-qemu-arm64-tools/aleph_bdev_drv
 
 cp ./xnu-qemu-arm64-tools/aleph_bdev_drv/bin/aleph_bdev_drv.bin ./
 
-python3 xnu-qemu-arm64-tools/bootstrap_scripts/asn1rdskdecode.py ./048-32651-104.dmg ./048-32651-104.dmg.out
-cp ./048-32651-104.dmg.out ./hfs.main
+python3 xnu-qemu-arm64-tools/bootstrap_scripts/asn1rdskdecode.py "./${RAM_DISK}" "./${RAM_DISK}.out"
+cp "./${RAM_DISK}.out" ./hfs.main
 
 hdiutil resize -size 6G -imagekey diskimage-class=CRawDiskImage ./hfs.main
 hdiutil attach -imagekey diskimage-class=CRawDiskImage ./hfs.main
-hdiutil attach ./048-31952-103.dmg
+hdiutil attach "./${IOS_DISK}"
 
-sudo diskutil enableownership /Volumes/PeaceB16B92.arm64UpdateRamDisk/
-sudo rm -rf /Volumes/PeaceB16B92.arm64UpdateRamDisk/*
-sudo rsync -av /Volumes/PeaceB16B92.N56N66OS/* /Volumes/PeaceB16B92.arm64UpdateRamDisk/
-sudo chown root /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64
+sudo diskutil enableownership "/Volumes/${RAM_DISK_NAME}/"
+sudo rm -rf "/Volumes/${RAM_DISK_NAME}/"*
+sudo rsync -av "/Volumes/${IOS_DISK_NAME}/"* "/Volumes/${RAM_DISK_NAME}/"
+sudo chown root "/Volumes/${RAM_DISK_NAME}/System/Library/Caches/com.apple.dyld/dyld_shared_cache_arm64"
 
-sudo rm -rf /Volumes/PeaceB16B92.arm64UpdateRamDisk/private/var/*
+sudo rm -rf "/Volumes/${RAM_DISK_NAME}/private/var/"*
 
 git clone https://github.com/jakeajames/rootlessJB
 cd rootlessJB/rootlessJB/bootstrap/tars/
 tar xvf iosbinpack.tar
-sudo cp -R iosbinpack64 /Volumes/PeaceB16B92.arm64UpdateRamDisk/
+sudo cp -R iosbinpack64 "/Volumes/${RAM_DISK_NAME}/"
 echo "Thank you @jakeajames!"
 cd -
 
 brew install dropbear
 dropbearkey -t rsa -f ./dropbear_key | grep "^ssh-rsa " >> dropbear_key.pub
-sudo mkdir -p /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear
-sudo cp dropbear_key /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/dropbear_key
-sudo cp dropbear_key.pub /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/dropbear_key.pub
+sudo mkdir -p "/Volumes/${RAM_DISK_NAME}/etc/dropbear"
+sudo cp dropbear_key "/Volumes/${RAM_DISK_NAME}/etc/dropbear/dropbear_key"
+sudo cp dropbear_key.pub "/Volumes/${RAM_DISK_NAME}/etc/dropbear/dropbear_key.pub"
 
 ### MAC
 
@@ -151,8 +173,8 @@ if [[ $(uname) = Linux ]]; then
     sudo rm ./dropbear_ecdsa_host_key
     sudo rm ./dropbear_rsa_host_key
     sudo rm ./dropbear_ed25519_host_key
-    sudo mkdir -p /run/media/user/PeaceB16B92.arm64UpdateRamDisk/var/dropbear/
-    sudo mkdir -p /run/media/user/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/
+    sudo mkdir -p "/run/media/user/${RAM_DISK_NAME}/var/dropbear/"
+    sudo mkdir -p /"run/media/user/${RAM_DISK_NAME}/etc/dropbear/"
 
     sudo dropbearkey -t ecdsa -f ./dropbear_ecdsa_host_key | grep "^ecdsa-sha2-nistp256 " >> dropbear_ecdsa_host_key.pub
     sudo dropbearkey -t rsa -f ./dropbear_rsa_host_key | grep "^ssh-rsa " >> dropbear_rsa_host_key.pub
@@ -167,32 +189,32 @@ dropbear_ed25519_host_key
 dropbear_ed25519_host_key.pub
 )
     for KEY_FILE in "${KEY_FILES[@]}"; do
-        sudo cp -f "${KEY_FILE}" /run/media/user/PeaceB16B92.arm64UpdateRamDisk/var/dropbear/"${KEY_FILE}"
-        sudo cp -f "${KEY_FILE}" /run/media/user/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/"${KEY_FILE}"
+        sudo cp -f "${KEY_FILE}" "/run/media/user/${RAM_DISK_NAME}/var/dropbear/${KEY_FILE}"
+        sudo cp -f "${KEY_FILE}" "/run/media/user/${RAM_DISK_NAME}/etc/dropbear/${KEY_FILE}"
     done
 
 else
-    sudo mkdir -p /Volumes/PeaceB16B92.arm64UpdateRamDisk/var/dropbear/
-    sudo mkdir -p /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/
-    sudo dropbearkey -t dss -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/dropbear_dss_host_key
-    sudo dropbearkey -t rsa -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/dropbear_rsa_host_key
-    sudo dropbearkey -t ecdsa -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/dropbear_ecdsa_host_key
-    sudo dropbearkey -t ed25519 -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/dropbear/dropbear_ed25519_host_key
-    sudo dropbearkey -t dss -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/var/dropbear/dropbear_dss_host_key
-    sudo dropbearkey -t rsa -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/var/dropbear/dropbear_rsa_host_key
-    sudo dropbearkey -t ecdsa -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/var/dropbear/dropbear_ecdsa_host_key
-    sudo dropbearkey -t ed25519 -f /Volumes/PeaceB16B92.arm64UpdateRamDisk/var/dropbear/dropbear_ed25519_host_key
+    sudo mkdir -p "/Volumes/${RAM_DISK_NAME}/var/dropbear/"
+    sudo mkdir -p "/Volumes/${RAM_DISK_NAME}/etc/dropbear/"
+    sudo dropbearkey -t dss -f "/Volumes/${RAM_DISK_NAME}/etc/dropbear/dropbear_dss_host_key"
+    sudo dropbearkey -t rsa -f "/Volumes/${RAM_DISK_NAME}/etc/dropbear/dropbear_rsa_host_key"
+    sudo dropbearkey -t ecdsa -f "/Volumes/${RAM_DISK_NAME}/etc/dropbear/dropbear_ecdsa_host_key"
+    sudo dropbearkey -t ed25519 -f "/Volumes/${RAM_DISK_NAME}/etc/dropbear/dropbear_ed25519_host_key"
+    sudo dropbearkey -t dss -f "/Volumes/${RAM_DISK_NAME}/var/dropbear/dropbear_dss_host_key"
+    sudo dropbearkey -t rsa -f "/Volumes/${RAM_DISK_NAME}/var/dropbear/dropbear_rsa_host_key"
+    sudo dropbearkey -t ecdsa -f "/Volumes/${RAM_DISK_NAME}/var/dropbear/dropbear_ecdsa_host_key"
+    sudo dropbearkey -t ed25519 -f "/Volumes/${RAM_DISK_NAME}/var/dropbear/dropbear_ed25519_host_key"
 fi
 
-# sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/iosbinpack64/binlink.sh <<EOF
+# sudo tee /Volumes/${RAM_DISK_NAME}/iosbinpack64/binlink.sh <<EOF
 # export PATH=/iosbinpack64/usr/bin:/iosbinpack64/bin:/iosbinpack64/usr/sbin:/iosbinpack64/sbin:\$PATH
 # EOF
 
-# sudo chmod +x /Volumes/PeaceB16B92.arm64UpdateRamDisk/iosbinpack64/binlink.sh
+# sudo chmod +x /Volumes/${RAM_DISK_NAME}/iosbinpack64/binlink.sh
 
 # PASTE THESE ONE BY ONE, THEY MAY NOT PASTE CORRECTLY IF OTHERWISE
 
-sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/bash.plist <<'EOF'
+sudo tee "/Volumes/${RAM_DISK_NAME}/System/Library/LaunchDaemons/bash.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -224,7 +246,7 @@ sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/ba
 EOF
 
 
-sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/mount_sec.plist <<EOF
+sudo tee "/Volumes/${RAM_DISK_NAME}/System/Library/LaunchDaemons/mount_sec.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -257,7 +279,7 @@ sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/mo
 EOF
 
 
-sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/tcptunnel.plist <<EOF
+sudo tee "/Volumes/${RAM_DISK_NAME}/System/Library/LaunchDaemons/tcptunnel.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -292,7 +314,7 @@ sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/tc
 EOF
 
 
-sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/dropbear.plist <<EOF
+sudo tee "/Volumes/${RAM_DISK_NAME}/System/Library/LaunchDaemons/dropbear.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -331,7 +353,7 @@ sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/dr
 EOF
 
 
-# sudo sed -i -e 's%REPLACE_ME%/iosbinpack64%g' /Volumes/PeaceB16B92.arm64UpdateRamDisk/iosbinpack64/dropbear.plist
+# sudo sed -i -e 's%REPLACE_ME%/iosbinpack64%g' /Volumes/${RAM_DISK_NAME}/iosbinpack64/dropbear.plist
 
 mkdir -p jtool
 cd jtool
@@ -343,29 +365,29 @@ cd -
 
 git clone https://github.com/theos/sdks.git
 
-export XNU_SOURCES=$PWD/darwin-xnu
-export KERNEL_SYMBOLS_FILE=$PWD/symbols.nm
-export QEMU_DIR=$PWD/xnu-qemu-arm64
-export QEMU_TOOLS_DIR=$PWD/xnu-qemu-arm64-tools/
+export XNU_SOURCES="$PWD/darwin-xnu"
+export KERNEL_SYMBOLS_FILE="$PWD/symbols.nm"
+export QEMU_DIR="$PWD/xnu-qemu-arm64"
+export QEMU_TOOLS_DIR="$PWD/xnu-qemu-arm64-tools/"
 export NUM_BLOCK_DEVS=2
-export KERNEL_CACHE=$PWD/kernelcache.release.n66.out
-export DTB_FIRMWARE=$PWD/Firmware/all_flash/DeviceTree.n66ap.im4p.out
-export DRIVER_FILENAME=$PWD/aleph_bdev_drv.bin
-export IOS_DIR=$PWD
-export HFS_MAIN=$PWD/hfs.main
-export HFS_SEC=$PWD/hfs.sec
-export SDK_DIR=$PWD/sdks/iPhoneOS11.2.sdk
+export KERNEL_CACHE="$PWD/${KERNEL_CACHE_RAW}.out"
+export DTB_FIRMWARE="$PWD/Firmware/all_flash/${DEVICE_TREE_IM4P}.out"
+export DRIVER_FILENAME="$PWD/aleph_bdev_drv.bin"
+export IOS_DIR="$PWD"
+export HFS_MAIN="$PWD/hfs.main"
+export HFS_SEC="$PWD/hfs.sec"
+export SDK_DIR="$PWD/${IOD_SDK}"
 
 # Update tree & Build the Custom Block Device Driver
-cd ${QEMU_TOOLS_DIR}
-git pull
-cd ${IOS_DIR}
+# cd "${QEMU_TOOLS_DIR}"
+# git pull
+cd "${IOS_DIR}"
 
 echo "Thanks you @Maroc-OS for these edits!"
 
-make -C ${QEMU_TOOLS_DIR}/aleph_bdev_drv clean
-make -C ${QEMU_TOOLS_DIR}/aleph_bdev_drv
-cp ${QEMU_TOOLS_DIR}/aleph_bdev_drv/bin/aleph_bdev_drv.bin ${DRIVER_FILENAME}
+make -C "${QEMU_TOOLS_DIR}/aleph_bdev_drv clean"
+make -C "${QEMU_TOOLS_DIR}/aleph_bdev_drv"
+cp "${QEMU_TOOLS_DIR}/aleph_bdev_drv/bin/aleph_bdev_drv.bin" "${DRIVER_FILENAME}"
 
 # Update tree & Build XNU QEMU for iOS
 cd ${QEMU_DIR}
@@ -384,6 +406,9 @@ tee ./ent.xml <<EOF
 </plist>
 EOF
 
+
+##### HELP WANTED
+##### IF YOU CAN MAKE THIS ON LINUX THEN THE WHOLE THING CAN BE DONE IN THE DOCKER WITHOUT OSX
 cd xnu-qemu-arm64-tools/tcp-tunnel
 
 make distclean
@@ -396,16 +421,16 @@ cd -
 # re attach
 hdiutil attach -imagekey diskimage-class=CRawDiskImage ./hfs.main
 
-sudo cp /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/fstab /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/fstab_orig
+sudo cp "/Volumes/${RAM_DISK_NAME}/etc/fstab" "/Volumes/${RAM_DISK_NAME}/etc/fstab_orig"
 
-sudo tee /Volumes/PeaceB16B92.arm64UpdateRamDisk/etc/fstab <<EOF
+sudo tee "/Volumes/${RAM_DISK_NAME}/etc/fstab" <<EOF
 /dev/disk0 / hfs ro 0 1
 /dev/disk1 /private/var hfs rw,nosuid,nodev 0 2
 EOF
 
-sudo rm /Volumes/PeaceB16B92.arm64UpdateRamDisk/System/Library/LaunchDaemons/com.apple.mobile.keybagd.plist
+sudo rm "/Volumes/${RAM_DISK_NAME}/System/Library/LaunchDaemons/com.apple.mobile.keybagd.plist"
 
-sudo cp /Volumes/PeaceB16B92.arm64UpdateRamDisk/sbin/launchd ./launchd_unpatched
+sudo cp "/Volumes/${RAM_DISK_NAME}/sbin/launchd" ./launchd_unpatched
 
 # patched according to https://github.com/alephsecurity/xnu-qemu-arm64/wiki/Build-iOS-on-QEMU
 # patch instruction at 0x10002fb18
@@ -413,28 +438,30 @@ sudo cp /Volumes/PeaceB16B92.arm64UpdateRamDisk/sbin/launchd ./launchd_unpatched
 # mov w20,#0x01
 
 # Download pre-patched
-wget https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/patched/launchd.patched.bin
-sudo cp -f launchd.patched.bin /Volumes/PeaceB16B92.arm64UpdateRamDisk/sbin/launchd
+if [[ "${PATCH_LAUNCHD}" = true ]]; then
+    wget "${PATHCED_LAUNCHD}"
+    sudo cp -f "$(basename "${PATHCED_LAUNCHD}")" "/Volumes/${RAM_DISK_NAME}/sbin/launchd"
+fi
 
-hdiutil detach /Volumes/PeaceB16B92.arm64UpdateRamDisk
-hdiutil detach /Volumes/PeaceB16B92.N56N66OS
+hdiutil detach "/Volumes/${RAM_DISK_NAME}"
+hdiutil detach "/Volumes/${IOS_DISK_NAME}"
 
-cp ./048-32651-104.dmg.out ./hfs.sec
+cp "./${RAM_DISK}.out" ./hfs.sec
 hdiutil resize -size 6G -imagekey diskimage-class=CRawDiskImage ./hfs.sec
 hdiutil attach -imagekey diskimage-class=CRawDiskImage ./hfs.sec
-hdiutil attach ./048-31952-103.dmg
+hdiutil attach "./${IOS_DISK}"
 
-sudo rm -rf /Volumes/PeaceB16B92.arm64UpdateRamDisk/*
-sudo rsync -av /Volumes/PeaceB16B92.N56N66OS/private/var/* /Volumes/PeaceB16B92.arm64UpdateRamDisk/
+sudo rm -rf "/Volumes/${RAM_DISK_NAME}/"*
+sudo rsync -av "/Volumes/${IOS_DISK_NAME}/private/var/"* "/Volumes/${RAM_DISK_NAME}/"
 
-sudo mkdir /Volumes/PeaceB16B92.arm64UpdateRamDisk/dropbear
+sudo mkdir "/Volumes/${RAM_DISK_NAME}/dropbear"
 
-hdiutil detach /Volumes/PeaceB16B92.arm64UpdateRamDisk
-hdiutil detach /Volumes/PeaceB16B92.N56N66OS
+hdiutil detach "/Volumes/${RAM_DISK_NAME}"
+hdiutil detach "/Volumes/${IOS_DISK_NAME}"
 
 # PATCH dyld if you want to use gdb
 hdiutil attach -imagekey diskimage-class=CRawDiskImage ./hfs.main
-cp /Volumes/PeaceB16B92.arm64UpdateRamDisk/usr/lib/dyld ./dyld_unpatched
+cp "/Volumes/${RAM_DISK_NAME}/usr/lib/dyld" ./dyld_unpatched
 
 # dyld patched according to https://github.com/alephsecurity/xnu-qemu-arm64/wiki/Disable-ASLR-for-dyld_shared_cache-load
 # patch instruction at 00022720
@@ -442,26 +469,28 @@ cp /Volumes/PeaceB16B92.arm64UpdateRamDisk/usr/lib/dyld ./dyld_unpatched
 # mov x0, #0x0
 
 # pre-patched
-wget https://raw.githubusercontent.com/sickcodes/Docker-eyeOS/master/patched/dyld.patched.bin
-sudo cp -f dyld.patched.bin /Volumes/PeaceB16B92.arm64UpdateRamDisk/usr/lib/dyld
+if [[ "${PATCH_DYLD}" = true ]]; then
+    wget "${PATCHED_DYLD}"
+    sudo cp -f "$(basename "${PATCHED_DYLD}")" "/Volumes/${RAM_DISK_NAME}/usr/lib/dyld"
+fi
 
 # SIGN everything that wants a signature and add to static trust cache
 >tchashes
 >static_tc
 
 # sign the patched launchd, the patched dyld, and the tcp-tunnel
-sudo jtool --sign --ent ent.xml --ident com.apple.xpc.launchd --inplace /Volumes/PeaceB16B92.arm64UpdateRamDisk/sbin/launchd
-sudo jtool --sign --ent ent.xml --inplace /Volumes/PeaceB16B92.arm64UpdateRamDisk/usr/lib/dyld
-sudo jtool --sign --ent ent.xml --inplace /Volumes/PeaceB16B92.arm64UpdateRamDisk/bin/tunnel
+sudo jtool --sign --ent ent.xml --ident com.apple.xpc.launchd --inplace "/Volumes/${RAM_DISK_NAME}/sbin/launchd"
+sudo jtool --sign --ent ent.xml --inplace "/Volumes/${RAM_DISK_NAME}/usr/lib/dyld"
+sudo jtool --sign --ent ent.xml --inplace "/Volumes/${RAM_DISK_NAME}/bin/tunnel"
 
 # rip out the trust cache hashes and add to your very own static trust cache
-sudo jtool --sig --ent /Volumes/PeaceB16B92.arm64UpdateRamDisk/sbin/launchd  | grep CDHash | cut -d' ' -f6 | cut -c 1-40 >> ./tchashes
-sudo jtool --sig --ent /Volumes/PeaceB16B92.arm64UpdateRamDisk/usr/lib/dyld  | grep CDHash | cut -d' ' -f6 | cut -c 1-40 >> ./tchashes
-sudo jtool --sig --ent /Volumes/PeaceB16B92.arm64UpdateRamDisk/bin/tunnel  | grep CDHash | cut -d' ' -f6 | cut -c 1-40 >> ./tchashes
+sudo jtool --sig --ent "/Volumes/${RAM_DISK_NAME}/sbin/launchd"  | grep CDHash | cut -d' ' -f6 | cut -c 1-40 >> ./tchashes
+sudo jtool --sig --ent "/Volumes/${RAM_DISK_NAME}/usr/lib/dyld"  | grep CDHash | cut -d' ' -f6 | cut -c 1-40 >> ./tchashes
+sudo jtool --sig --ent "/Volumes/${RAM_DISK_NAME}/bin/tunnel"  | grep CDHash | cut -d' ' -f6 | cut -c 1-40 >> ./tchashes
 
 python xnu-qemu-arm64-tools/bootstrap_scripts/create_trustcache.py tchashes static_tc
 
-hdiutil detach /Volumes/PeaceB16B92.arm64UpdateRamDisk
+hdiutil detach "/Volumes/${RAM_DISK_NAME}"
 
 echo 'FIN; Docker-eyeOS'
 

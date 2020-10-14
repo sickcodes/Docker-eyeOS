@@ -59,6 +59,8 @@ docker run -it --privileged \
 
 ssh root@localhost -p 2222
 
+# password is alpine
+
 # -----> Try to SSH about 4 times
 # -----> also needs to HIT ENTER a few times in the terminal to kick it along
 

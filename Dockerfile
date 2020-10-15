@@ -185,12 +185,15 @@ RUN mkdir -p /home/arch/docker-eyeos \
 WORKDIR /home/arch/docker-eyeos
 RUN wget "${IPSW}"
 
-RUN unzip "$(basename "${IPSW}")"
+RUN unzip "$(basename "${IPSW}")" \
+    && rm -f "${IPSW}"
 
 WORKDIR /home/arch/docker-eyeos
 RUN git clone https://github.com/apple/darwin-xnu.git
 RUN git clone https://github.com/theos/sdks.git
-RUN git clone https://github.com/xybp888/iOS-SDKs.git
+
+# temporarily removed to reduce image size until full build on Linux is complete
+# RUN git clone https://github.com/xybp888/iOS-SDKs.git
 
 WORKDIR /home/arch/docker-eyeos
 RUN git clone --recursive https://github.com/alephsecurity/xnu-qemu-arm64.git

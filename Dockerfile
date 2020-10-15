@@ -79,7 +79,7 @@ ARG KERNEL_CACHE_RAW=kernelcache.release.n66
 # located at "./Firmware/all_flash/" after unzipping the IPSW
 ARG DEVICE_TREE_IM4P=DeviceTree.n66ap.im4p
 # DEVICE MODEL
-ENV PHONE_MODEL iPhone6splus-n66-s8000
+ENV PHONE_MODEL=iPhone6splus-n66-s8000
 
 
 #### IOS_SDK FOR BUILDING TCP-TUNNEL (FUTURE)
@@ -144,10 +144,11 @@ RUN makepkg -si --noconfirm
 WORKDIR /home/arch
 RUN yay --getpkgbuild hfsprogs
 WORKDIR /home/arch/hfsprogs
-RUN wget "https://src.fedoraproject.org/rpms/hfsplus-tools/raw/master/f/hfsplus-tools-sysctl.patch"
-RUN sed -i -e 's/\ \ patch\ \-p0\ \-i\ /patch\ \-p1\ \-i\ \"\${srcdir}\/\.\.\/hfsplus\-tools\-sysctl\.patch\"\npatch\ \-p0\ \-i\ /' PKGBUILD \
-    ; makepkg -si --noconfirm \
-    && echo 'hfsprogs patch thanks @keithspg https://aur.archlinux.org/packages/hfsprogs/#comment-765637'
+RUN makepkg -si --noconfirm
+# RUN wget "https://src.fedoraproject.org/rpms/hfsplus-tools/raw/master/f/hfsplus-tools-sysctl.patch"
+# RUN sed -i -e 's/\ \ patch\ \-p0\ \-i\ /patch\ \-p1\ \-i\ \"\${srcdir}\/\.\.\/hfsplus\-tools\-sysctl\.patch\"\npatch\ \-p0\ \-i\ /' PKGBUILD \
+#     ; makepkg -si --noconfirm \
+#     && echo 'hfsprogs patch thanks @keithspg https://aur.archlinux.org/packages/hfsprogs/#comment-765637'
 
 WORKDIR /home/arch
 RUN yay --getpkgbuild gdb-multiarch

@@ -117,12 +117,27 @@ ENV GDB_PORT=1234
 ENV GDB=false
 
 WORKDIR /root
+
+ARG RANKMIRRORS=no
+ARG MIRROR_COUNTRY=US
+ARG MIRROR_COUNT=10
+
+# Arch Linux server mirrors for faster builds
+RUN if [[ "${RANKMIRRORS}" = yes ]]; then { pacman -Sy wget --noconfirm || pacman -Syu wget --noconfirm ; } \
+    ; wget -O ./rankmirrors "https://raw.githubusercontent.com/sickcodes/Docker-OSX/master/rankmirrors" \
+    ; wget -O- "https://www.archlinux.org/mirrorlist/?country=${MIRROR_COUNTRY:-US}&protocol=https&use_mirror_status=on" \
+    | sed -e 's/^#Server/Server/' -e '/^#/d' \
+    | head -n "$((${MIRROR_COUNT:-10}+1))" \
+    | bash ./rankmirrors --verbose --max-time 5 - > /etc/pacman.d/mirrorlist \
+    && tee -a /etc/pacman.d/mirrorlist <<< 'Server = http://mirrors.evowise.com/archlinux/$repo/os/$arch' \
+    && tee -a /etc/pacman.d/mirrorlist <<< 'Server = http://mirror.rackspace.com/archlinux/$repo/os/$arch' \
+    && tee -a /etc/pacman.d/mirrorlist <<< 'Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch' \
+    && cat /etc/pacman.d/mirrorlist; fi
+
 RUN tee -a /etc/pacman.conf <<< '[community-testing]' \
     && tee -a /etc/pacman.conf <<< 'Include = /etc/pacman.d/mirrorlist'
 # RUN tee -a /etc/pacman.conf <<< '[blackarch]' \
 #     && tee -a /etc/pacman.conf <<< 'Include = /etc/pacman.d/mirrorlist'
-
-RUN tee /etc/pacman.d/mirrorlist <<< 'Server = http://mirror2.totbb.net/archlinux/$repo/os/$arch'
 
 RUN pacman -Syyuu --needed --noconfirm sudo git python3 llvm aarch64-linux-gnu-gcc python-pyasn1 unzip fakeroot \
     base-devel go wget make cmake clang flex bison icu fuse linux-headers gcc-multilib lib32-gcc-libs \

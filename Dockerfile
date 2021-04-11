@@ -139,10 +139,10 @@ RUN tee -a /etc/pacman.conf <<< '[community-testing]' \
 # RUN tee -a /etc/pacman.conf <<< '[blackarch]' \
 #     && tee -a /etc/pacman.conf <<< 'Include = /etc/pacman.d/mirrorlist'
 
-RUN pacman -Syyuu --needed --noconfirm sudo git python3 llvm aarch64-linux-gnu-gcc python-pyasn1 unzip fakeroot \
-    base-devel go wget make cmake clang flex bison icu fuse linux-headers gcc-multilib lib32-gcc-libs \
-    pkg-config fontconfig cairo libtiff python2 mesa llvm lld libbsd libxkbfile libxcursor libxext \
-    libxkbcommon libxrandr leatherman gcc fuse-overlayfs qemu qemu-arch-extra qemu-guest-agent libvirt \
+RUN pacman -Syyu --needed --noconfirm git python3 llvm aarch64-linux-gnu-gcc python-pyasn1 unzip \
+    go make cmake clang icu fuse linux-headers gcc-multilib lib32-gcc-libs \
+    fontconfig cairo libtiff python2 mesa lld libbsd libxkbfile libxcursor libxext \
+    libxkbcommon libxrandr leatherman fuse-overlayfs qemu qemu-arch-extra qemu-guest-agent libvirt \
     bsdiff openssh \
     && useradd arch \
     && echo 'arch ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers \
@@ -152,7 +152,7 @@ RUN pacman -Syyuu --needed --noconfirm sudo git python3 llvm aarch64-linux-gnu-g
 USER arch
 WORKDIR /home/arch
 RUN sudo chown -R arch:arch /home/arch
-RUN git clone https://aur.archlinux.org/yay.git
+RUN git clone --depth 1 https://aur.archlinux.org/yay.git
 WORKDIR /home/arch/yay
 RUN makepkg -si --noconfirm
 
@@ -170,17 +170,19 @@ RUN yay --getpkgbuild gdb-multiarch
 WORKDIR /home/arch/gdb-multiarch
 RUN if [[ "${GDB_MULTIARCH}" = true ]]; then makepkg --skipinteg --skippgpcheck --skipchecksums -si --noconfirm; else echo "Skipping GDB"; fi
 
+# TEMP-FIX for pacman issue
+RUN patched_glibc=glibc-linux4-2.33-4-x86_64.pkg.tar.zst \
+    && curl -LO "https://raw.githubusercontent.com/sickcodes/Docker-OSX/master/${patched_glibc}" \
+    && bsdtar -C / -xvf "${patched_glibc}" || echo "Everything is fine."
+# TEMP-FIX for pacman issue
+
 # allow ssh to container
-USER root
-WORKDIR /root
-RUN mkdir .ssh \
-    && chmod 700 .ssh
+RUN mkdir -m 700 /root/.ssh
 
 WORKDIR /root/.ssh
 RUN touch authorized_keys \
     && chmod 644 authorized_keys
 
-RUN mkdir -p /etc/ssh
 WORKDIR /etc/ssh
 RUN tee -a sshd_config <<< 'AllowTcpForwarding yes' \
     && tee -a sshd_config <<< 'PermitTunnel yes' \
@@ -205,18 +207,17 @@ RUN unzip "$(basename "${IPSW}")" \
     && rm -f "${IPSW}"
 
 WORKDIR /home/arch/docker-eyeos
-RUN git clone https://github.com/apple/darwin-xnu.git
-RUN git clone https://github.com/theos/sdks.git
+RUN git clone --depth 1 https://github.com/apple/darwin-xnu.git
+RUN git clone --depth 1 https://github.com/theos/sdks.git
 
 # temporarily removed to reduce image size until full build on Linux is complete
 # RUN git clone https://github.com/xybp888/iOS-SDKs.git
 
+ARG BRANCH=master
 WORKDIR /home/arch/docker-eyeos
-RUN git clone --recursive https://github.com/alephsecurity/xnu-qemu-arm64.git
+RUN git clone --recursive --branch="${BRANCH}" https://github.com/alephsecurity/xnu-qemu-arm64.git
 WORKDIR /home/arch/docker-eyeos/xnu-qemu-arm64
-RUN git reset --hard HEAD^1 \
-    && git checkout master \
-    && git remote add sickcodes https://github.com/sickcodes/xnu-qemu-arm64.git \
+RUN git remote add sickcodes https://github.com/sickcodes/xnu-qemu-arm64.git \
     && git remote add mcapollo https://github.com/MCApollo/xnu-qemu-arm64.git \
     && git fetch --all \
     && git reset --hard HEAD^1 \
@@ -224,12 +225,11 @@ RUN git reset --hard HEAD^1 \
     && git checkout bbd2d9955021d72d5dbfccc94a034cc671c41181 \
     && echo 'Thank you MCApollo && Aleph Security (Lev Aronsky, Jonathan Afek, Vera Mens!)'
 
+ARG BRANCH=master
 WORKDIR /home/arch/docker-eyeos
-RUN git clone https://github.com/alephsecurity/xnu-qemu-arm64-tools.git
+RUN git clone --recursive --branch="${BRANCH}" https://github.com/alephsecurity/xnu-qemu-arm64-tools.git
 WORKDIR /home/arch/docker-eyeos/xnu-qemu-arm64-tools
-RUN git reset --hard HEAD^1 \
-    && git checkout master \
-    && git remote add sickcodes https://github.com/sickcodes/xnu-qemu-arm64-tools.git \
+RUN git remote add sickcodes https://github.com/sickcodes/xnu-qemu-arm64-tools.git \
     && git remote add mcapollo https://github.com/MCApollo/xnu-qemu-arm64-tools.git \
     && git fetch --all \
     && git reset --hard HEAD^1 \
